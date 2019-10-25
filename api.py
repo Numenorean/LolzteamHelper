@@ -184,7 +184,7 @@ class Client:
         if '"_redirectStatus":"ok"' in r.text:
             return True
         elif '\\u0412\\u044b \\u0443\\u0436\\u0435' in r.text:
-            return 'alredy'
+            return 'already'
         else:
             return False
             
