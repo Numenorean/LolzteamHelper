@@ -199,7 +199,7 @@ class Client:
                 "_xfNoRedirect": "1",
                 "_xfToken": self.xf_token,
                 "_xfResponseType": "json"}, cookies=self.cookies)
-        if '"_redirectStatus":"ok"' not in r.text:
+        if '"_redirectStatus":"ok"' in r.text:
             r = requests.get(
                 f'https://lolzteam.net/threads/{id}/',
                 cookies=self.cookies)
