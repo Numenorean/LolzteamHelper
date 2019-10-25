@@ -64,13 +64,15 @@ class Client:
                 'Referer': 'https://lolzteam.net/login/login',
                 'Origin': 'https://lolzteam.net/',
                 'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/437.36 (KHTML, like Gecko)'})
-        if 'codeHasBeenSent' in r.text:
-            return True
+        if 'ctrl_telegram_code' in r.text:
+            return 'telegram'
+        elif 'ctrl_email_code' in r.text:
+            return 'email'
         else:
             return False
 
 
-    def auth(self, code):
+    def auth(self, code, provider):
         r = requests.post(
             'https://lolzteam.net/login/two-step',
             cookies={
@@ -79,7 +81,7 @@ class Client:
             data={
                 "code": code,
                 "trust": "1",
-                "provider": "email",
+                "provider": provider,
                 "_xfConfirm": "1",
                 "_xfToken": "",
                 "remember": [
@@ -184,7 +186,7 @@ class Client:
         if '"_redirectStatus":"ok"' in r.text:
             return True
         elif '\\u0412\\u044b \\u0443\\u0436\\u0435' in r.text:
-            return 'already'
+            return 'alredy'
         else:
             return False
             
@@ -205,12 +207,13 @@ def main():
         password = input('Пароль: ')
         cl = Client(email, password)
         while True:
-            if cl.sendCode() is not True:
+            r = cl.sendCode()
+            if r is False:
                 print('Ошибка. Попробуй снова')
             else:
                 while True:
                     code = input('Код: ')
-                    if cl.auth(code) is False:
+                    if cl.auth(code, r) is False:
                         print('Неверный код')
                     else:
                         print('Успешный вход')
