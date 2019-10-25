@@ -174,7 +174,7 @@ class Client:
         return ids
     
 
-    def joinContest(self, id):
+    def joinContestNoLikes(self, id):
         r = requests.post(
             f'https://lolzteam.net/threads/{id}/participate', 
             params={'_xfToken': self.xf_token},
@@ -189,6 +189,33 @@ class Client:
             return 'alredy'
         else:
             return False
+    
+    def joinContestLikes(self, id):
+        r = requests.post(
+            f'https://lolzteam.net/threads/{id}/participate', 
+            params={'_xfToken': self.xf_token},
+            data={
+                "_xfRequestUri": f"/threads/{id}/",
+                "_xfNoRedirect": "1",
+                "_xfToken": self.xf_token,
+                "_xfResponseType": "json"}, cookies=self.cookies)
+        if '"_redirectStatus":"ok"' not in r.text:
+            r = requests.get(
+                f'https://lolzteam.net/threads/{id}/',
+                cookies=self.cookies)
+            id_p = re.search(r'href="posts/(\d+)/like"', r.text).group(1)
+            r = requests.post(
+                f'https://lolzteam.net/posts/{id_p}/like',
+                data={
+                    "_xfRequestUri": f"/threads/{id_p}/",
+                    "_xfNoRedirect": "1",
+                    "_xfToken": self.xf_token,
+                    "_xfResponseType": "json"}, cookies=self.cookies)
+            if '_visitor_alertsUnread' in r.text:
+                return True
+            else:
+                print('False')
+
             
 
 
@@ -222,10 +249,10 @@ def main():
                         break
                 break
     while True:
-        what = str(input('''1 - Очистка непрочитанных сообщений
+        what = input('''1 - Очистка непрочитанных сообщений
 2 - Автовход во все розыгрыши
 3 - Выход
--> '''))
+-> ''')
         if what == '1':
             print('------------------\nЗагрузка диалогов...')
             conv = cl.getConversations()
@@ -234,11 +261,20 @@ def main():
             cl.threads(cl.read, conv)
             print('Чтение завершено\n------------------')
         elif what == '2':
+            what = input('С лайками/без(1/0): ')
+            if what not in '01':
+                print('Ошибка')
+                break
+            if what == '1':
+                func = cl.joinContestLikes
+            else:
+                func = cl.joinContestNoLikes
+            print(func)
             print('------------------\nЗагрузка розыгрышей...')
             conv = cl.getContests()
             print(f'Загружено {len(conv)} розыгрышей')
             print('Вступаю...')
-            cl.threads(cl.joinContest, conv)
+            cl.threads(func, conv)
             print('Успешно завершено\n------------------')
         elif what == '3':
             break
