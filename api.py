@@ -4,8 +4,10 @@ import json
 import time
 import os.path
 import requests
+import time
 from bs4 import BeautifulSoup
 from multiprocessing.dummy import Pool
+
 
 threads = 10
 
@@ -36,38 +38,44 @@ class Client:
         self.xf_tfa_trust = ''
         self.xf_token = ''
         self.converts = 0
+        self.f = []
 
 
     def sendCode(self):
-        resp = requests.get('https://lolzteam.net/').text
-        self.xf_id = re.search(
-            r'href\|max\|([\w]{32})\|navigator',
-            resp).group(1)
-        self.xf_session = requests.get(
-            'https://lolzteam.net/',
-            cookies={
-                'xf_id': self.xf_id}).cookies.get_dict()['xf_session']
-        r = requests.post(
-            'https://lolzteam.net/login/login',
-            cookies={
-                'xf_id': self.xf_id,
-                'xf_session': self.xf_session},
-            data={
-                'login': self.email,
-                'password': self.password,
-                'remember': '1',
-                'stopfuckingbrute1337': '1',
-                'cookie_check': '1',
-                '_xfToken': '',
-                'redirect': 'https%3A%2F%2Flolzteam.net%2F'},
-            headers={
-                'Referer': 'https://lolzteam.net/login/login',
-                'Origin': 'https://lolzteam.net/',
-                'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/437.36 (KHTML, like Gecko)'})
+        try:
+            resp = requests.get('https://lolzteam.net/').text
+            self.xf_id = re.search(
+                r'href\|max\|([\w]{32})\|navigator',
+                resp).group(1)
+            self.xf_session = requests.get(
+                'https://lolzteam.net/',
+                cookies={
+                    'xf_id': self.xf_id}).cookies.get_dict()['xf_session']
+            r = requests.post(
+                'https://lolzteam.net/login/login',
+                cookies={
+                    'xf_id': self.xf_id,
+                    'xf_session': self.xf_session},
+                data={
+                    'login': self.email,
+                    'password': self.password,
+                    'remember': '1',
+                    'stopfuckingbrute1337': '1',
+                    'cookie_check': '1',
+                    '_xfToken': '',
+                    'redirect': 'https%3A%2F%2Flolzteam.net%2F'},
+                headers={
+                    'Referer': 'https://lolzteam.net/login/login',
+                    'Origin': 'https://lolzteam.net/',
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/437.36 (KHTML, like Gecko)'})
+        except:
+            return False
         if 'ctrl_telegram_code' in r.text:
             return 'telegram'
         elif 'ctrl_email_code' in r.text:
             return 'email'
+        elif 'loginForm--errors' in r.text:
+            return 'incorrect'
         else:
             return False
 
@@ -84,9 +92,7 @@ class Client:
                 "provider": provider,
                 "_xfConfirm": "1",
                 "_xfToken": "",
-                "remember": [
-                    "1",
-                    "1"],
+                "remember": "1",
                 "redirect": "https://lolzteam.net/",
                 "save": "Подтвердить",
                 "_xfRequestUri": "/login/two-step?redirect",
@@ -169,7 +175,7 @@ class Client:
                 'Origin': 'https://lolzteam.net/',
                 'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/437.36 (KHTML, like Gecko)'},
                 cookies=self.cookies).text
-            lst = re.findall(r'href="threads/(\d{7,10})/"', html)
+            lst = re.findall(r'id="thread-(\d{7,10})"', html)
             ids += lst
         return ids
     
@@ -199,7 +205,7 @@ class Client:
                 "_xfNoRedirect": "1",
                 "_xfToken": self.xf_token,
                 "_xfResponseType": "json"}, cookies=self.cookies)
-        if '"_redirectStatus":"ok"' in r.text:
+        if '"_redirectStatus":"ok"' not in r.text:
             r = requests.get(
                 f'https://lolzteam.net/threads/{id}/',
                 cookies=self.cookies)
@@ -216,6 +222,13 @@ class Client:
             else:
                 print('False')
 
+    def getNick(self, id):
+        r = requests.get(f'https://lolzteam.net/members/{id}/', cookies=self.cookies)
+        try:
+            cl.f.append(BeautifulSoup(r.text, 'html.parser').find('h1', {'class':'page_name username'}).find('span').getText()+'\n')
+            del r
+        except:
+            pass
             
 
 
@@ -234,9 +247,15 @@ def main():
         password = input('Пароль: ')
         cl = Client(email, password)
         while True:
+            print(cl.email)
             r = cl.sendCode()
             if r is False:
                 print('Ошибка. Попробуй снова')
+            elif r == 'incorrect':
+                print('Неправлильный логин или пароль')
+                email = input('Почта: ')
+                password = input('Пароль: ')
+                cl = Client(email, password)
             else:
                 while True:
                     code = input('Код: ')
@@ -269,7 +288,6 @@ def main():
                 func = cl.joinContestLikes
             else:
                 func = cl.joinContestNoLikes
-            print(func)
             print('------------------\nЗагрузка розыгрышей...')
             conv = cl.getContests()
             print(f'Загружено {len(conv)} розыгрышей')
