@@ -103,7 +103,6 @@ class Client:
                 'Origin': 'https://lolzteam.net/',
                 'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/437.36 (KHTML, like Gecko)'})
         if '_redirectStatus' in r.json().keys():
-            self.converts = int(r.json()['_visitor_conversationsUnread'])
             self.cookies = r.cookies.get_dict()
             self.cookies['xf_id'] = self.xf_id
             self.xf_session = self.cookies['xf_session']
@@ -118,6 +117,19 @@ class Client:
 
 
     def getConversations(self):
+        self.converts = int(requests.get(
+            'https://lolzteam.net/conversations/popup',
+            params={
+                "_xfRequestUri": "/",
+                "_xfNoRedirect": "1",
+                "_xfToken": self.xf_token,
+                "_xfResponseType": "json"},
+            cookies=self.cookies,
+            headers={
+                'Referer': 'https://lolzteam.net/',
+                'Origin': 'https://lolzteam.net/',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/437.36 (KHTML, like Gecko)'}
+            ).json()['_visitor_conversationsUnread'])
         cycles = math.ceil(self.converts / 30)
         all_ids = []
         for i in range(1, cycles + 1):
@@ -247,7 +259,6 @@ def main():
         password = input('Пароль: ')
         cl = Client(email, password)
         while True:
-            print(cl.email)
             r = cl.sendCode()
             if r is False:
                 print('Ошибка. Попробуй снова')
