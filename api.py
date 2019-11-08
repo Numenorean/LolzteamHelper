@@ -43,8 +43,7 @@ class Client:
     def reloadSession(self):
         r = requests.get('https://lolzteam.net/', cookies=self.cookies)
         if 'xf_session' in r.cookies.get_dict():
-            self.xf_session = r.cookies.get_dict()['xf_session']
-            self.cookies['xf_session'] = self.xf_session
+            self.xf_session = self.cookies['xf_session'] = r.cookies.get_dict()['xf_session']
         self.xf_token = re.search(
                 r'name="_xfToken" value="([\w,\d]+)"',
                 r.text).group(1)
