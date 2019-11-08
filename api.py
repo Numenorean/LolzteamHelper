@@ -40,13 +40,25 @@ class Client:
         self.converts = 0
         self.f = []
 
+    def reloadSession(self):
+        r = requests.get('https://lolzteam.net/', cookies=self.cookies)
+        if 'xf_session' in r.cookies.get_dict():
+            self.xf_session = r.cookies.get_dict()['xf_session']
+            self.cookies['xf_session'] = self.xf_session
+        self.xf_token = re.search(
+                r'name="_xfToken" value="([\w,\d]+)"',
+                r.text).group(1)
 
+        
     def sendCode(self):
         try:
             resp = requests.get('https://lolzteam.net/').text
-            self.xf_id = re.search(
-                r'href\|max\|([\w]{32})\|navigator',
-                resp).group(1)
+            try:
+                self.xf_id = re.search(
+                    r'href\|max\|([\w]{32})\|navigator',
+                    resp).group(1)
+            except:
+                self.xf_id = 'a0517892f57753e1c94ab6cdbacd8a1b'
             self.xf_session = requests.get(
                 'https://lolzteam.net/',
                 cookies={
@@ -278,6 +290,7 @@ def main():
                         print('Данные авторизации сохранены в файл cookies')
                         break
                 break
+    cl.reloadSession()
     while True:
         what = input('''1 - Очистка непрочитанных сообщений
 2 - Автовход во все розыгрыши
